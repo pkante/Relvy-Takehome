@@ -2,7 +2,7 @@
 
 Relvy Takehome project: Allows user to upload their logs (in .json or .ndjson format) and get insights from an AI assistant. The logs uploaded are preprocessed to minimize API Costs
 
-## 🚀 Features
+## Features
 
 - **React Frontend**: Modern, responsive UI with drag-and-drop file upload
 - **Intelligent Log Filtering**: multi-stage filtering
@@ -10,7 +10,7 @@ Relvy Takehome project: Allows user to upload their logs (in .json or .ndjson fo
 - **Real-time Chat**: Ask multiple questions about uploaded logs
 - **Cost Tracking**: Display LLM usage costs and token consumption
 
-## 🏗️ Architecture
+## Architecture
 
 ```
 Frontend (React + Vite)     Backend (FastAPI + Python)
@@ -21,13 +21,13 @@ Frontend (React + Vite)     Backend (FastAPI + Python)
 └─────────────────────┘    └──────────────────────────┘
 ```
 
-## 📋 Prerequisites
+## Prerequisites
 
 - **Node.js** (v16 or higher)
 - **Python** (v3.8 or higher)
 - **OpenAI API Key**
 
-## 🛠️ Setup Instructions
+## Setup Instructions
 
 ### Backend Setup
 
@@ -75,13 +75,13 @@ Frontend (React + Vite)     Backend (FastAPI + Python)
    npm run dev
    ```
 
-## 🎯 Usage
+## Usage
 
 1. **Upload Log File**: Drag and drop a `.json` or `.ndjson` file
 2. **Ask Questions**: Type queries like "What errors do you see?" or "Why is the cart service crashing?"
 3. **Get Insights**: Receive AI-powered analysis with cost breakdown
 
-## 🧠 Filtering & LLM Analysis Approach
+## Filtering & LLM Analysis Approach
 
 ### Multi-Stage Intelligent Filtering
 
