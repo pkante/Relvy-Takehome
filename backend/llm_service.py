@@ -11,7 +11,6 @@ from typing import List, Dict, Any, Optional
 from openai import OpenAI
 from dotenv import load_dotenv
 
-# Load environment variables
 load_dotenv()
 
 logger = logging.getLogger(__name__)
@@ -21,7 +20,7 @@ class LLMService:
         self.client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
         self.model = "gpt-4o-mini"
         
-        # System prompt for log analysis
+        # System prompt
         self.system_prompt = """You are an expert log analysis assistant. You help developers understand and debug issues in their application logs.
 
 FORMATTING REQUIREMENTS:
@@ -49,7 +48,7 @@ TONE:
                     conversation_history: List[Dict[str, str]] = None,
                     processing_summary: str = "") -> Dict[str, Any]:
         """
-        Analyze filtered logs using OpenAI GPT-4o mini
+        Analyze filtered logs using AI
         
         Args:
             filtered_windows: The filtered log windows from our enhanced filter
@@ -61,17 +60,14 @@ TONE:
             Dict with LLM response and metadata
         """
         try:
-            # Prepare the log data for the LLM
             log_context = self._prepare_log_context(filtered_windows, processing_summary)
-            
-            # Build conversation messages
+
+            #cache to store messages
             messages = [{"role": "system", "content": self.system_prompt}]
-            
-            # Add conversation history if available
+
             if conversation_history:
                 messages.extend(conversation_history)
-            
-            # Add the current query with log context
+
             user_message = f"""**User Query:** {user_query}
 
 **Filtered Log Data:**
@@ -83,15 +79,13 @@ Please analyze these logs and help me understand what's happening with my system
             
             logger.info(f"Sending request to OpenAI with {len(messages)} messages")
             
-            # Call OpenAI API
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=messages,
                 max_tokens=1500,
-                temperature=0.1  # Low temperature for consistent, factual responses
+                temperature=0.1  
             )
             
-            # Extract response
             llm_response = response.choices[0].message.content
             
             # Calculate cost (approximate)
@@ -99,7 +93,6 @@ Please analyze these logs and help me understand what's happening with my system
             output_tokens = response.usage.completion_tokens
             total_tokens = response.usage.total_tokens
             
-            # GPT-4o mini pricing (as of 2024)
             input_cost = (input_tokens / 1000000) * 0.15  # $0.15 per 1M input tokens
             output_cost = (output_tokens / 1000000) * 0.60  # $0.60 per 1M output tokens
             total_cost = input_cost + output_cost
@@ -198,29 +191,26 @@ You have already analyzed the user's logs. Use this previous analysis to answer 
             for j, log in enumerate(window['logs'], 1):
                 log_info = []
                 
-                # Add service info
                 if log.get('service') and log['service'] != 'unknown':
                     log_info.append(f"Service: {log['service']}")
-                
-                # Add severity
+
                 if log.get('severity'):
                     log_info.append(f"Severity: {log['severity']}")
                 
-                # Add HTTP info
                 if log.get('method') and log.get('route'):
                     log_info.append(f"HTTP: {log['method']} {log['route']}")
                 elif log.get('route'):
                     log_info.append(f"Route: {log['route']}")
                 
-                # Add status code
+                # status code
                 if log.get('status'):
                     log_info.append(f"Status: {log['status']}")
                 
-                # Add trace ID
+                # trace ID
                 if log.get('trace_id'):
                     log_info.append(f"Trace: {log['trace_id'][:16]}...")
                 
-                # Format log entry
+                # format log entry
                 log_header = f"  Log {j}: {' | '.join(log_info)}" if log_info else f"  Log {j}:"
                 context_parts.append(log_header)
                 context_parts.append(f"    Message: {log['message']}")
@@ -231,7 +221,7 @@ You have already analyzed the user's logs. Use this previous analysis to answer 
     def health_check(self) -> bool:
         """Check if OpenAI API is accessible"""
         try:
-            # Simple API test
+            # simple test
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=[{"role": "user", "content": "Hello"}],

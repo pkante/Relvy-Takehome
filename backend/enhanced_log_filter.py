@@ -85,33 +85,23 @@ class EnhancedLogFilter:
         """Defensive field extraction with multiple fallback paths"""
         entry = LogEntry(raw=raw_log)
         
-        # Extract timestamp
         entry.timestamp_raw, entry.timestamp = self._extract_timestamp(raw_log)
-        
-        # Extract severity
         entry.severity_text, entry.severity_number = self._extract_severity(raw_log)
         
-        # Extract trace information
+        # trace id
         entry.trace_id = self._extract_trace_id(raw_log)
         entry.span_id = self._extract_span_id(raw_log)
         
-        # Extract HTTP status
         entry.status = self._extract_status(raw_log)
         
-        # Extract route and method
         entry.route = self._extract_route(raw_log)
         entry.method = self._extract_method(raw_log)
-        
-        # Extract body/message
         entry.body = self._extract_body(raw_log)
-        
-        # Extract service name
+    
         entry.service_name = self._extract_service_name(raw_log)
         
-        # Determine if this is a "hot" event
         entry.is_hot = self._is_hot_event(entry)
-        
-        # Generate template hash for deduplication
+       
         entry.template_hash = self._generate_template_hash(entry.body)
         
         return entry
@@ -245,7 +235,6 @@ class EnhancedLogFilter:
                 if 100 <= status <= 599:
                     return status
         
-        # Try to extract from body
         body = self._extract_body(log)
         status_match = self.status_pattern.search(body)
         if status_match:
@@ -269,7 +258,6 @@ class EnhancedLogFilter:
             if value and isinstance(value, str) and value.startswith('/'):
                 return value
         
-        # Try to extract from body
         body = self._extract_body(log)
         route_match = self.route_pattern.search(body)
         if route_match:
@@ -292,8 +280,7 @@ class EnhancedLogFilter:
                 method = value.upper()
                 if method in ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS']:
                     return method
-        
-        # Try to extract from body
+    
         body = self._extract_body(log)
         method_match = self.method_pattern.search(body)
         if method_match:
@@ -483,23 +470,18 @@ class EnhancedLogFilter:
         score = 0.0
         
         for log in window.logs:
-            # Severity weight
             if log.severity_number:
                 score += log.severity_number * 0.5
             
-            # 5xx status weight
             if log.status and log.status >= 500:
                 score += 30
-            
-            # Error keywords weight
+
             if self.error_patterns.search(log.body):
                 score += 20
-            
-            # Template rarity (more unique = higher score)
+
             template_count = window.template_counts.get(log.template_hash, 1)
             score += max(10 - template_count, 1)
         
-        # Recency bonus (if timestamps available)
         if window.end_time:
             hours_ago = (datetime.now(timezone.utc) - window.end_time).total_seconds() / 3600
             if hours_ago < 24:
@@ -521,24 +503,19 @@ class EnhancedLogFilter:
             'time_recent': False,
             'status_codes': []
         }
-        
-        # Extract routes
+
         route_matches = re.findall(r'(/[\w\-\./]+)', query)
         criteria['routes'].extend(route_matches)
-        
-        # Extract HTTP methods
+
         method_matches = re.findall(r'\b(GET|POST|PUT|DELETE|PATCH|HEAD|OPTIONS)\b', query.upper())
         criteria['methods'].extend(method_matches)
-        
-        # Extract user IDs
+
         user_id_matches = re.findall(r'user[:\s]+(\w+)', query_lower)
         criteria['user_ids'].extend(user_id_matches)
         
-        # Extract status codes
         status_matches = re.findall(r'\b([45]\d{2})\b', query)
         criteria['status_codes'].extend([int(s) for s in status_matches])
-        
-        # Service patterns
+
         service_patterns = {
             'cart': ['cart', 'shopping', 'basket', 'checkout'],
             'payment': ['payment', 'billing', 'transaction', 'charge'],
@@ -550,8 +527,7 @@ class EnhancedLogFilter:
         for service, patterns in service_patterns.items():
             if any(pattern in query_lower for pattern in patterns):
                 criteria['services'].append(service)
-        
-        # Error indicators
+
         error_keywords = ['error', 'exception', 'failed', 'failure', 'crash', 'timeout', 'refused']
         if any(keyword in query_lower for keyword in error_keywords):
             criteria['error_indicators'] = True
@@ -608,28 +584,23 @@ class EnhancedLogFilter:
         """Generate human-readable summary for window"""
         if not window.logs:
             return "Empty window"
-        
-        # Analyze window contents
+
         services = Counter(log.service_name for log in window.logs)
         severities = Counter(log.severity_text for log in window.logs if log.severity_text)
         status_codes = Counter(log.status for log in window.logs if log.status)
         routes = Counter(log.route for log in window.logs if log.route)
         methods = Counter(log.method for log in window.logs if log.method)
-        
-        # Build summary components
+
         summary_parts = []
         
-        # Service info
         top_service = services.most_common(1)[0] if services else ('unknown', 0)
         if top_service[1] > 1:
             summary_parts.append(f"{top_service[0]} service")
-        
-        # Error info
+
         error_count = sum(1 for log in window.logs if self.error_patterns.search(log.body))
         if error_count > 0:
             summary_parts.append(f"{error_count} errors")
-        
-        # Status codes
+
         if status_codes:
             status_summary = []
             for status, count in status_codes.most_common(3):
@@ -637,14 +608,12 @@ class EnhancedLogFilter:
                     status_summary.append(f"{status} ({count}x)")
             if status_summary:
                 summary_parts.append(f"status: {', '.join(status_summary)}")
-        
-        # Routes
+
         if routes:
             top_route = routes.most_common(1)[0]
             if top_route[1] > 1:
                 summary_parts.append(f"route: {top_route[0]} ({top_route[1]}x)")
-        
-        # Template variety
+
         unique_templates = len(window.template_counts)
         total_logs = len(window.logs)
         if unique_templates < total_logs:
@@ -657,22 +626,22 @@ class EnhancedLogFilter:
         """Main enhanced filtering function"""
         logger.info(f"Starting enhanced filtering with {len(logs)} logs")
         
-        # Step 1: Hot event prefilter
+        # Hot event prefilter
         hot_logs = self.hot_event_prefilter(logs)
         if not hot_logs:
             logger.info("No hot events found, keeping top severity logs")
             # Fallback: keep logs with some severity
             hot_logs = [log for log in logs if log.severity_number and log.severity_number >= 30][:200]
         
-        # Step 2: Create trace/time windows
+        # Create trace/time windows
         windows = self.create_trace_windows(hot_logs)
         logger.info(f"Created {len(windows)} windows")
         
-        # Step 3: Template deduplication
+        # Template deduplication
         for window in windows:
             self.deduplicate_templates(window)
         
-        # Step 4: Calculate scores
+        # Calculate scores
         query_criteria = self.parse_query_advanced(query)
         logger.debug(f"Query criteria: {query_criteria}")
         
@@ -681,7 +650,7 @@ class EnhancedLogFilter:
             window.prompt_match_score = self.calculate_prompt_match_score(window, query_criteria)
             window.summary = self.generate_window_summary(window)
         
-        # Step 5: Sort and limit
+        # Sort and limit
         windows.sort(key=lambda w: w.importance_score + w.prompt_match_score, reverse=True)
         final_windows = windows[:max_windows]
         
@@ -695,11 +664,9 @@ def main():
     
     filter_system = EnhancedLogFilter()
     
-    # Load logs
     logs = filter_system.load_logs('../../sample_logs.ndjson')
     logger.info(f"Loaded {len(logs)} logs from sample_logs.ndjson")
     
-    # Test queries
     test_queries = [
         "cart service is crashing with 500 errors",
         "GET /checkout timeouts",
@@ -718,7 +685,6 @@ def main():
             logger.debug(f"  Summary: {window.summary}")
             logger.debug(f"  Template Counts: {window.template_counts}")
             
-            # Show first log from window
             if window.logs:
                 log = window.logs[0]
                 logger.debug(f"  Sample: [{log.service_name}] [{log.severity_text}] {log.body[:100]}...")
