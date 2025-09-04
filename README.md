@@ -1,13 +1,12 @@
 # RELVY TAKEHOME MVP
 
-A full-stack application for intelligent log analysis using AI-powered filtering and LLM-based incident analysis. Upload log files, ask questions, and get insights while minimizing LLM API costs through smart pre-filtering.
+Relvy Takehome project: Allows user to upload their logs (in .json or .ndjson format) and get insights from an AI assistant. The logs uploaded are preprocessed to minimize API Costs
 
 ## 🚀 Features
 
 - **React Frontend**: Modern, responsive UI with drag-and-drop file upload
 - **Intelligent Log Filtering**: multi-stage filtering
 - **LLM Analysis**: GPT-4o mini integration with conversation context
-- **Cost Optimization**: One-time log analysis per conversation
 - **Real-time Chat**: Ask multiple questions about uploaded logs
 - **Cost Tracking**: Display LLM usage costs and token consumption
 
@@ -58,7 +57,6 @@ Frontend (React + Vite)     Backend (FastAPI + Python)
    ```bash
    python main.py
    ```
-   Backend runs on `http://localhost:8000`
 
 ### Frontend Setup
 
@@ -76,14 +74,12 @@ Frontend (React + Vite)     Backend (FastAPI + Python)
    ```bash
    npm run dev
    ```
-   Frontend runs on `http://localhost:3000`
 
 ## 🎯 Usage
 
 1. **Upload Log File**: Drag and drop a `.json` or `.ndjson` file
 2. **Ask Questions**: Type queries like "What errors do you see?" or "Why is the cart service crashing?"
 3. **Get Insights**: Receive AI-powered analysis with cost breakdown
-4. **Follow-up Questions**: Continue the conversation without re-uploading files
 
 ## 🧠 Filtering & LLM Analysis Approach
 
@@ -135,4 +131,4 @@ relevance_score = calculate_prompt_match_score(log, query_terms)
 }
 ```
 
-**Built with ❤️ using React, FastAPI, and OpenAI GPT-4o mini**
+**Built with using React, FastAPI, and OpenAI GPT-4o mini**
